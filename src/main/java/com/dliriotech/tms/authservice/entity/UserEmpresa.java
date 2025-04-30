@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -12,16 +11,12 @@ import org.springframework.data.relational.core.mapping.Table;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table("auth_user")
-public class AuthUser {
+@Table("user_empresas")
+public class UserEmpresa {
 
-    @Id
-    private Integer id;
+    @Column("user_id")
+    private Integer userId;
 
-    @Column("user_name")
-    private String userName;
-
-    private String password;
-
-    private String role;
+    @Column("empresa_id")
+    private Integer empresaId;
 }

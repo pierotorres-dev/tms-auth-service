@@ -1,15 +1,15 @@
 package com.dliriotech.tms.authservice.service;
 
-import com.dliriotech.tms.authservice.dto.AuthResponse;
-import com.dliriotech.tms.authservice.dto.LoginRequest;
-import com.dliriotech.tms.authservice.dto.RegisterRequest;
+import com.dliriotech.tms.authservice.dto.*;
 import reactor.core.publisher.Mono;
 
 public interface AuthService {
 
-    Mono<AuthResponse> login(LoginRequest request);
+    Mono<LoginResponse> login(LoginRequest request);
 
-    Mono<AuthResponse> register(RegisterRequest request);
+    Mono<UserResponse> register(RegisterRequest request);
+
+    Mono<AuthResponse> generateToken(Integer userId, Integer empresaId);
 
     Mono<Boolean> validateToken(String token);
 

@@ -17,7 +17,4 @@ public class RegisterRequest {
 
     @NotBlank
     private String role;
-
-    @NotNull
-    private Integer idEmpresa;
 }

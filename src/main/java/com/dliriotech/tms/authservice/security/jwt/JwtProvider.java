@@ -24,7 +24,7 @@ public class JwtProvider {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
 
-    public String createToken(AuthUser user) {
+    public String createTokenWithEmpresa(AuthUser user, Integer empresaId) {
         var now = new Date();
         var expiryDate = new Date(now.getTime() + expirationMs);
 
@@ -32,7 +32,7 @@ public class JwtProvider {
                 .setSubject(user.getUserName())
                 .claim("id", user.getId())
                 .claim("role", user.getRole())
-                .claim("id_empresa", user.getIdEmpresa())
+                .claim("id_empresa", empresaId)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
@@ -58,6 +58,15 @@ public class JwtProvider {
                 .parseClaimsJws(token)
                 .getBody();
         return claims.getSubject();
+    }
+
+    public Integer getEmpresaIdFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("id_empresa", Integer.class);
     }
 
 }
