@@ -15,4 +15,6 @@ public class LoginResponse {
     private String role;
     private List<EmpresaInfo> empresas;
     private String token;
+    private String name;
+    private String lastName;
 }

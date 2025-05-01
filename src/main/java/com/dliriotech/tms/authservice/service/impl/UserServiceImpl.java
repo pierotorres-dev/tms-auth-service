@@ -33,6 +33,10 @@ public class UserServiceImpl implements UserService {
                                     .userName(request.getUserName())
                                     .password(passwordEncoder.encode(request.getPassword()))
                                     .role(request.getRole())
+                                    .role(request.getName())
+                                    .role(request.getLastName())
+                                    .role(request.getPhoneNumber())
+                                    .role(request.getEmail())
                                     .build())
                             .flatMap(user -> userRepository.save(user)
                                     .flatMap(savedUser ->

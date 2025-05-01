@@ -24,4 +24,14 @@ public class AuthUser {
     private String password;
 
     private String role;
+
+    private String name;
+
+    @Column("last_name")
+    private String lastName;
+
+    @Column("phone_number")
+    private String phoneNumber;
+
+    private String email;
 }

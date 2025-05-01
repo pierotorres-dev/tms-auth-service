@@ -76,6 +76,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .role(user.getRole())
                 .empresas(empresas)
                 .token(token)
+                .name(user.getName())
+                .lastName(user.getLastName())
                 .build());
     }
 
