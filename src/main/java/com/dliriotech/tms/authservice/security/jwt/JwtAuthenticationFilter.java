@@ -31,7 +31,11 @@ public class JwtAuthenticationFilter implements WebFilter {
         // No aplicar filtro en rutas públicas
         if (path.startsWith("/api/auth/login") ||
                 path.startsWith("/api/users/register") ||
-                path.startsWith("/api/auth/validate")) {
+                path.startsWith("/api/auth/validate") ||
+                path.startsWith("/swagger-ui") ||
+                path.startsWith("/v3/api-docs") ||
+                path.contains("/webjars") ||
+                path.equals("/openapi.yaml")) {
             return chain.filter(exchange);
         }
 
