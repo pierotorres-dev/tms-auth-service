@@ -10,8 +10,13 @@ import com.dliriotech.tms.authservice.repository.AuthUserRepository;
 import com.dliriotech.tms.authservice.repository.UserEmpresaRepository;
 import com.dliriotech.tms.authservice.security.jwt.JwtProvider;
 import com.dliriotech.tms.authservice.service.AuthenticationService;
+import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.observation.annotation.Observed;
+import io.micrometer.observation.aop.ObservedAspect;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -29,6 +34,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
 
+    @Observed(name = "login.attempt",
+            contextualName = "authentication.login",
+            lowCardinalityKeyValues = {"service", "auth-service"})
     @Override
     public Mono<LoginResponse> login(LoginRequest request) {
         return userRepository.findByUserName(request.getUserName())

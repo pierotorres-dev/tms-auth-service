@@ -3,6 +3,7 @@ package com.dliriotech.tms.authservice.controller;
 import com.dliriotech.tms.authservice.dto.LoginRequest;
 import com.dliriotech.tms.authservice.dto.LoginResponse;
 import com.dliriotech.tms.authservice.service.AuthenticationService;
+import io.github.resilience4j.bulkhead.annotation.Bulkhead;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -17,6 +18,7 @@ public class AuthenticationController {
 
     private final AuthenticationService authenticationService;
 
+    @Bulkhead(name="authentication")
     @PostMapping("/login")
     public Mono<ResponseEntity<LoginResponse>> login(@RequestBody LoginRequest request) {
         log.info("Solicitud de login para usuario: {}", request.getUserName());
