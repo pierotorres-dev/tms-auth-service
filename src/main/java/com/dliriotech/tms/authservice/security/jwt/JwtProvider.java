@@ -69,4 +69,12 @@ public class JwtProvider {
         return claims.get("id_empresa", Integer.class);
     }
 
+    public String getRoleFromToken(String token) {
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return claims.get("role", String.class);
+    }
 }
