@@ -16,6 +16,7 @@ import org.springframework.web.reactive.function.server.*;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
@@ -88,7 +89,7 @@ class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
                 .code(errorDetails.code())
                 .message(errorDetails.message())
                 .path(request.path())
-                .timestamp(LocalDateTime.now())
+                .timestamp(LocalDateTime.now(ZoneId.of("America/Lima")))
                 .build();
 
         return ServerResponse.status(errorDetails.status())
