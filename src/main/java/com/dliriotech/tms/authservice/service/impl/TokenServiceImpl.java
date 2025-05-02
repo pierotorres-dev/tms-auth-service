@@ -6,6 +6,7 @@ import com.dliriotech.tms.authservice.exception.UnauthorizedException;
 import com.dliriotech.tms.authservice.exception.UserNotFoundException;
 import com.dliriotech.tms.authservice.repository.AuthUserRepository;
 import com.dliriotech.tms.authservice.repository.UserEmpresaRepository;
+import com.dliriotech.tms.authservice.security.cache.SessionTokenCache;
 import com.dliriotech.tms.authservice.security.jwt.JwtProvider;
 import com.dliriotech.tms.authservice.service.TokenService;
 import lombok.RequiredArgsConstructor;
@@ -21,24 +22,36 @@ public class TokenServiceImpl implements TokenService {
     private final AuthUserRepository userRepository;
     private final UserEmpresaRepository userEmpresaRepository;
     private final JwtProvider jwtProvider;
+    private final SessionTokenCache sessionTokenCache;
 
     @Override
-    public Mono<AuthResponse> generateToken(Integer userId, Integer empresaId) {
-        return userRepository.findById(userId)
-                .switchIfEmpty(Mono.error(new UserNotFoundException("Usuario no encontrado")))
-                .flatMap(user ->
-                        userEmpresaRepository.findByUserIdAndEmpresaId(userId, empresaId)
-                                .hasElement()
-                                .flatMap(exists -> {
-                                    if (!exists) {
-                                        return Mono.error(new UnauthorizedException("El usuario no tiene acceso a esta empresa"));
-                                    }
-                                    return Mono.fromCallable(() -> jwtProvider.createTokenWithEmpresa(user, empresaId))
-                                            .flatMap(token -> Mono.fromCallable(() ->
-                                                    AuthResponse.builder().token(token).build()));
-                                })
-                )
-                .subscribeOn(Schedulers.boundedElastic());
+    public Mono<AuthResponse> generateToken(Integer userId, Integer empresaId, String sessionToken) {
+        return sessionTokenCache.validate(sessionToken, userId)
+                .flatMap(valid -> {
+                    if (!valid) {
+                        return Mono.error(new UnauthorizedException("Sesión inválida o expirada"));
+                    }
+                    return sessionTokenCache.remove(sessionToken)
+                            .then(userRepository.findById(userId)
+                                    .switchIfEmpty(Mono.error(new UserNotFoundException("Usuario no encontrado")))
+                                    .flatMap(user ->
+                                            userEmpresaRepository.findByUserIdAndEmpresaId(userId, empresaId)
+                                                    .hasElement()
+                                                    .flatMap(exists -> {
+                                                        if (!exists) {
+                                                            return Mono.error(new UnauthorizedException("El usuario no tiene acceso a esta empresa"));
+                                                        }
+                                                        return Mono.fromCallable(() -> jwtProvider.createTokenWithEmpresa(user, empresaId))
+                                                                .flatMap(token -> Mono.fromCallable(() ->
+                                                                        AuthResponse.builder().token(token).build()));
+                                                    })
+                                    )
+                            );
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .doOnSubscribe(s -> log.info("Generando token para usuario {}", userId))
+                .doOnSuccess(r -> log.info("Token generado exitosamente"))
+                .doOnError(e -> log.error("Error al generar token", e));
     }
 
     @Override

@@ -19,9 +19,10 @@ public class TokenController {
     @PostMapping("/generate")
     public Mono<ResponseEntity<AuthResponse>> generateToken(
             @RequestParam Integer userId,
-            @RequestParam Integer empresaId) {
+            @RequestParam Integer empresaId,
+            @RequestParam String sessionToken) {
         log.info("Generando token para usuario: {} y empresa: {}", userId, empresaId);
-        return tokenService.generateToken(userId, empresaId)
+        return tokenService.generateToken(userId, empresaId, sessionToken)
                 .map(ResponseEntity::ok)
                 .doOnError(e -> log.error("Error generando token: {}", e.getMessage()));
     }
