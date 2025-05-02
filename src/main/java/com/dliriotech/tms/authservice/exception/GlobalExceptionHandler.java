@@ -10,19 +10,22 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerCodecConfigurer;
-import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.server.*;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
 
 @Component
 @Order(-2)
 @Slf4j
 class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
+
+    private final Map<Class<? extends Throwable>, Function<Throwable, ErrorDetails>> exceptionHandlers;
 
     public GlobalExceptionHandler(ErrorAttributes errorAttributes,
                                   WebProperties.Resources resources,
@@ -30,6 +33,7 @@ class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
                                   ServerCodecConfigurer configurer) {
         super(errorAttributes, resources, applicationContext);
         this.setMessageWriters(configurer.getWriters());
+        this.exceptionHandlers = configureExceptionHandlers();
     }
 
     @Override
@@ -37,45 +41,60 @@ class GlobalExceptionHandler extends AbstractErrorWebExceptionHandler {
         return RouterFunctions.route(RequestPredicates.all(), this::renderErrorResponse);
     }
 
+    private Map<Class<? extends Throwable>, Function<Throwable, ErrorDetails>> configureExceptionHandlers() {
+        Map<Class<? extends Throwable>, Function<Throwable, ErrorDetails>> handlers = new HashMap<>();
+
+        handlers.put(BaseException.class, ex -> {
+            BaseException baseEx = (BaseException) ex;
+            return new ErrorDetails(baseEx.getStatus(), baseEx.getCode(), baseEx.getMessage());
+        });
+
+        handlers.put(InvalidCredentialsException.class, ex ->
+                new ErrorDetails(HttpStatus.UNAUTHORIZED, "AUTH-001", ex.getMessage()));
+
+        handlers.put(UserNotFoundException.class, ex ->
+                new ErrorDetails(HttpStatus.NOT_FOUND, "AUTH-002", ex.getMessage()));
+
+        handlers.put(InvalidTokenException.class, ex ->
+                new ErrorDetails(HttpStatus.UNAUTHORIZED, "AUTH-003", ex.getMessage()));
+
+        handlers.put(UserAlreadyExistsException.class, ex ->
+                new ErrorDetails(HttpStatus.CONFLICT, "AUTH-004", ex.getMessage()));
+
+        handlers.put(ValidationException.class, ex ->
+                new ErrorDetails(HttpStatus.BAD_REQUEST, "AUTH-005", ex.getMessage()));
+
+        handlers.put(UnauthorizedException.class, ex ->
+                new ErrorDetails(HttpStatus.FORBIDDEN, "AUTH-006", ex.getMessage()));
+
+        return handlers;
+    }
+
     private Mono<ServerResponse> renderErrorResponse(ServerRequest request) {
         Throwable error = getError(request);
-        log.error("Error procesando solicitud: {}", error.getMessage());
+        log.error("Error procesando solicitud: {}", error.getMessage(), error);
 
-        HttpStatus status;
-        String code;
-        String message;
-
-        if (error instanceof BaseException baseError) {
-            status = baseError.getStatus();
-            code = baseError.getCode();
-            message = baseError.getMessage();
-        } else if (error instanceof BadCredentialsException) {
-            status = HttpStatus.UNAUTHORIZED;
-            code = "AUTH-001";
-            message = "Credenciales incorrectas";
-        } else if (error instanceof UsernameNotFoundException) {
-            status = HttpStatus.NOT_FOUND;
-            code = "AUTH-002";
-            message = error.getMessage();
-        } else if (error instanceof IllegalArgumentException) {
-            status = HttpStatus.BAD_REQUEST;
-            code = "AUTH-006";
-            message = error.getMessage();
-        } else {
-            status = HttpStatus.INTERNAL_SERVER_ERROR;
-            code = "SYS-001";
-            message = "Error interno del servidor";
-        }
+        ErrorDetails errorDetails = exceptionHandlers.entrySet().stream()
+                .filter(entry -> entry.getKey().isInstance(error))
+                .findFirst()
+                .map(entry -> entry.getValue().apply(error))
+                .orElse(new ErrorDetails(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        "SYS-001",
+                        "Error interno del servidor"
+                ));
 
         ErrorResponse errorResponse = ErrorResponse.builder()
-                .code(code)
-                .message(message)
+                .code(errorDetails.code())
+                .message(errorDetails.message())
                 .path(request.path())
                 .timestamp(LocalDateTime.now())
                 .build();
 
-        return ServerResponse.status(status)
+        return ServerResponse.status(errorDetails.status())
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromValue(errorResponse));
     }
+
+    private record ErrorDetails(HttpStatus status, String code, String message) {}
 }
