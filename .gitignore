@@ -2,6 +2,7 @@
 .env
 application.yml
 application-local.properties
+application-test.properties
 docker-compose.yml
 
 HELP.md
