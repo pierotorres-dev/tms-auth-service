@@ -1,5 +1,6 @@
 package com.dliriotech.tms.authservice.security.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -10,6 +11,7 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
 @Component
+@Slf4j
 public class ServiceAuthFilter implements WebFilter {
 
     @Value("${service.api-gateway-key}")
@@ -18,6 +20,13 @@ public class ServiceAuthFilter implements WebFilter {
     @NotNull
     @Override
     public Mono<Void> filter(@NotNull ServerWebExchange exchange, @NotNull WebFilterChain chain) {
+        String path = exchange.getRequest().getPath().value();
+
+        if (path.startsWith("/swagger-ui") ||
+                path.startsWith("/v3/api-docs")) {
+            return chain.filter(exchange);
+        }
+
         String serviceKey = exchange.getRequest().getHeaders().getFirst("X-Service-API-Key");
 
         if (serviceKey == null || !serviceKey.equals(serviceApiKey)) {
