@@ -23,7 +23,7 @@ public class ServiceAuthFilter implements WebFilter {
         String path = exchange.getRequest().getPath().value();
 
         if (path.startsWith("/swagger-ui") ||
-                path.startsWith("/v3/api-docs")) {
+                path.startsWith("/v3/api-docs") || path.startsWith("/webjars") || path.startsWith("/openapi.yaml")) {
             return chain.filter(exchange);
         }
 

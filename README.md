@@ -39,7 +39,7 @@ TMS Auth Service es un microservicio de autenticación y autorización para el s
 ### 1. Clonar el repositorio
 
 ```bash
-git clone [url-del-repositorio]
+git clone https://github.com/pierotorres-dev/tms-auth-service
 cd tms-auth-service
 ```
 
