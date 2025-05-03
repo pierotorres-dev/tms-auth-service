@@ -4,7 +4,6 @@ import com.dliriotech.tms.authservice.security.cache.SessionTokenCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Primary;
-import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.core.ReactiveRedisTemplate;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -13,7 +12,6 @@ import java.time.Duration;
 
 @Component
 @Primary
-@Profile("!local")
 @RequiredArgsConstructor
 @Slf4j
 public class RedisSessionTokenCache implements SessionTokenCache {

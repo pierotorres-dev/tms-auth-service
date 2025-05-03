@@ -2,6 +2,7 @@ package com.dliriotech.tms.authservice.controller;
 
 import com.dliriotech.tms.authservice.dto.AuthResponse;
 import com.dliriotech.tms.authservice.service.TokenService;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ public class TokenController {
 
     private final TokenService tokenService;
 
+    @RateLimiter(name = "tokengenerator")
     @PostMapping("/generate")
     public Mono<ResponseEntity<AuthResponse>> generateToken(
             @RequestParam Integer userId,
