@@ -19,6 +19,9 @@ tags:
   - name: Tokens
     description: Operaciones relacionadas con tokens
 
+security:
+  - ApiKeyAuth: []
+
 paths:
   /api/auth/login:
     post:
@@ -122,6 +125,12 @@ paths:
           schema:
             type: integer
             format: int32
+        - name: sessionToken
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Token de sesión obtenido durante el login
       responses:
         '200':
           description: Token generado correctamente
@@ -163,6 +172,13 @@ paths:
           $ref: '#/components/responses/InternalError'
 
 components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-Service-API-Key
+      description: Clave de API requerida para todas las operaciones
+
   schemas:
     LoginRequest:
       type: object
@@ -199,6 +215,9 @@ components:
         token:
           type: string
           description: Token JWT
+        sessionToken:
+          type: string
+          description: Token de sesión para selección de empresa
         name:
           type: string
           description: Nombre del usuario
