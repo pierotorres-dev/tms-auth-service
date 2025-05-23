@@ -232,6 +232,12 @@ components:
           type: integer
           format: int32
           description: ID de la empresa
+        nombre:
+          type: string
+          description: Nombre de la empresa
+        email:
+          type: string
+          description: Correo de referencia de la empresa
 
     RegisterRequest:
       type: object
