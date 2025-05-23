@@ -9,5 +9,6 @@ import lombok.Data;
 @AllArgsConstructor
 public class EmpresaInfo {
     private Integer id;
-    // Aquí podrías añadir más datos si los necesitas, como nombre de empresa
+    private String nombre;
+    private String email;
 }
