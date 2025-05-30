@@ -70,6 +70,8 @@ public class TokenServiceImpl implements TokenService {
                     return AuthResponse.builder().token(newToken).build();
                 })
                 .subscribeOn(Schedulers.boundedElastic())
+                .doOnSubscribe(s -> log.info("Actualizando token"))
+                .doOnSuccess(r -> log.info("Token actualizado exitosamente"))
                 .doOnError(e -> log.error("Error al refrescar token", e));
     }
 }
