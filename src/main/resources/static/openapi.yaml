@@ -215,6 +215,9 @@ components:
         token:
           type: string
           description: Token JWT
+        refreshToken:
+          type: string
+          description: Token JWT para una sesión de 24 horas
         sessionToken:
           type: string
           description: Token de sesión para selección de empresa
@@ -295,6 +298,9 @@ components:
         token:
           type: string
           description: Token JWT
+        refreshToken:
+          type: string
+          description: Token JWT para una sesión de 24 horas
 
     ErrorResponse:
       type: object
