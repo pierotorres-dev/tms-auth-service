@@ -20,6 +20,9 @@ public class JwtProvider {
     @Value("${jwt.expiration}")
     private long expirationMs;
 
+    @Value("${jwt.refresh-expiration}")
+    private long refreshExpirationMs;
+
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
@@ -33,6 +36,20 @@ public class JwtProvider {
                 .claim("id", user.getId())
                 .claim("role", user.getRole())
                 .claim("id_empresa", empresaId)
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    public String createRefreshToken(AuthUser user) {
+        var now = new Date();
+        var expiryDate = new Date(now.getTime() + refreshExpirationMs);
+
+        return Jwts.builder()
+                .setSubject(user.getUserName())
+                .claim("id", user.getId())
+                .claim("role", user.getRole())
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)

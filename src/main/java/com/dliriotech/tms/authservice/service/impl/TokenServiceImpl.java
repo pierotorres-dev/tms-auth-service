@@ -41,9 +41,14 @@ public class TokenServiceImpl implements TokenService {
                                                         if (!exists) {
                                                             return Mono.error(new UnauthorizedException("El usuario no tiene acceso a esta empresa"));
                                                         }
-                                                        return Mono.fromCallable(() -> jwtProvider.createTokenWithEmpresa(user, empresaId))
-                                                                .flatMap(token -> Mono.fromCallable(() ->
-                                                                        AuthResponse.builder().token(token).build()));
+                                                        return Mono.fromCallable(() -> {
+                                                            String token = jwtProvider.createTokenWithEmpresa(user, empresaId);
+                                                            String refreshToken = jwtProvider.createRefreshToken(user);
+                                                            return AuthResponse.builder()
+                                                                    .token(token)
+                                                                    .refreshToken(refreshToken)
+                                                                    .build();
+                                                        });
                                                     })
                                     )
                             );
@@ -67,7 +72,11 @@ public class TokenServiceImpl implements TokenService {
                 .map(user -> {
                     Integer empresaId = jwtProvider.getEmpresaIdFromToken(token);
                     String newToken = jwtProvider.createTokenWithEmpresa(user, empresaId);
-                    return AuthResponse.builder().token(newToken).build();
+                    String newRefreshToken = jwtProvider.createRefreshToken(user);
+                    return AuthResponse.builder()
+                            .token(newToken)
+                            .refreshToken(newRefreshToken)
+                            .build();
                 })
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnSubscribe(s -> log.info("Actualizando token"))

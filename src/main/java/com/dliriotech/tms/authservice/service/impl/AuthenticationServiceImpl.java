@@ -55,18 +55,22 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                                             .collectList()
                                             .flatMap(userEmpresas -> {
                                                 if (userEmpresas.isEmpty()) {
-                                                    return buildLoginResponse(user, List.of(), null, null);
+                                                    return buildLoginResponse(user, List.of(), null, null, null);
                                                 } else if (userEmpresas.size() == 1) {
                                                     Integer empresaId = userEmpresas.get(0).getEmpresaId();
-                                                    return Mono.fromCallable(() -> jwtProvider.createTokenWithEmpresa(user, empresaId))
-                                                            .flatMap(token ->
+                                                    return Mono.fromCallable(() -> {
+                                                                String token = jwtProvider.createTokenWithEmpresa(user, empresaId);
+                                                                String refreshToken = jwtProvider.createRefreshToken(user);
+                                                                return new String[]{token, refreshToken};
+                                                            })
+                                                            .flatMap(tokens ->
                                                                     empresaRepository.findById(empresaId)
                                                                             .map(empresa -> EmpresaInfo.builder()
                                                                                     .id(empresa.getId())
                                                                                     .nombre(empresa.getNombre())
                                                                                     .build())
                                                                             .flatMap(empresaInfo ->
-                                                                                    buildLoginResponse(user, List.of(empresaInfo), token, null)
+                                                                                    buildLoginResponse(user, List.of(empresaInfo), tokens[0], tokens[1], null)
                                                                             )
                                                             );
                                                 } else {
@@ -82,7 +86,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                                                             .collectList()
                                                             .flatMap(empresasInfo ->
                                                                     sessionTokenCache.store(sessionToken, user.getId(), Duration.ofMinutes(5))
-                                                                            .then(buildLoginResponse(user, empresasInfo, null, sessionToken))
+                                                                            .then(buildLoginResponse(user, empresasInfo, null, null, sessionToken))
                                                             );
                                                 }
                                             });
@@ -93,13 +97,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .doOnSuccess(r -> log.info("Sesión iniciada correctamente"));
     }
 
-    private Mono<LoginResponse> buildLoginResponse(AuthUser user, List<EmpresaInfo> empresas, String token, String sessionToken) {
+    private Mono<LoginResponse> buildLoginResponse(AuthUser user, List<EmpresaInfo> empresas, String token, String refreshToken, String sessionToken) {
         return Mono.just(LoginResponse.builder()
                 .userId(user.getId())
                 .userName(user.getUserName())
                 .role(user.getRole())
                 .empresas(empresas)
                 .token(token)
+                .refreshToken(refreshToken)
                 .sessionToken(sessionToken)
                 .name(user.getName())
                 .lastName(user.getLastName())
