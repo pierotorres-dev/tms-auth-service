@@ -113,7 +113,11 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     @Override
     public Mono<Boolean> validateToken(String token) {
-        return Mono.fromCallable(() -> jwtProvider.validate(token))
-                .subscribeOn(Schedulers.boundedElastic());
+        return Mono.fromCallable(() ->
+                        jwtProvider.validate(token) && jwtProvider.hasEmpresaClaim(token)
+                )
+                .subscribeOn(Schedulers.boundedElastic())
+                .doOnSuccess(valid -> log.debug("Validación de token: {} (tiene claim id_empresa: {})",
+                        valid, jwtProvider.hasEmpresaClaim(token)));
     }
 }

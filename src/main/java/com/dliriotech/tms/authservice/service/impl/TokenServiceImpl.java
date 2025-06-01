@@ -65,6 +65,9 @@ public class TokenServiceImpl implements TokenService {
                     if (!jwtProvider.validate(token)) {
                         throw new InvalidTokenException("Token inválido o expirado");
                     }
+                    if (jwtProvider.hasEmpresaClaim(token)) {
+                        throw new InvalidTokenException("El token proporcionado no es un token de refresco válido");
+                    }
                     return jwtProvider.getUserNameFromToken(token);
                 })
                 .flatMap(userRepository::findByUserName)

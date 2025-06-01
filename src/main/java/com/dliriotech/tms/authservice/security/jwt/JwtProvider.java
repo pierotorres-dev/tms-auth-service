@@ -94,4 +94,21 @@ public class JwtProvider {
                 .getBody();
         return claims.get("role", String.class);
     }
+
+    public boolean hasEmpresaClaim(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.containsKey("id_empresa");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean isRefreshToken(String token) {
+        return validate(token) && !hasEmpresaClaim(token);
+    }
 }
