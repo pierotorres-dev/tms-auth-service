@@ -60,29 +60,38 @@ public class TokenServiceImpl implements TokenService {
     }
 
     @Override
-    public Mono<AuthResponse> refreshToken(String token) {
+    public Mono<AuthResponse> refreshToken(String refreshToken, Integer empresaId) {
         return Mono.fromCallable(() -> {
-                    if (!jwtProvider.validate(token)) {
+                    if (!jwtProvider.validate(refreshToken)) {
                         throw new InvalidTokenException("Token inválido o expirado");
                     }
-                    if (jwtProvider.hasEmpresaClaim(token)) {
+                    if (jwtProvider.hasEmpresaClaim(refreshToken)) {
                         throw new InvalidTokenException("El token proporcionado no es un token de refresco válido");
                     }
-                    return jwtProvider.getUserNameFromToken(token);
+                    return jwtProvider.getUserIdFromToken(refreshToken);
                 })
-                .flatMap(userRepository::findByUserName)
+                .flatMap(userRepository::findById)
                 .switchIfEmpty(Mono.error(new UserNotFoundException("Usuario asociado al token no encontrado")))
-                .map(user -> {
-                    Integer empresaId = jwtProvider.getEmpresaIdFromToken(token);
-                    String newToken = jwtProvider.createTokenWithEmpresa(user, empresaId);
-                    String newRefreshToken = jwtProvider.createRefreshToken(user);
-                    return AuthResponse.builder()
-                            .token(newToken)
-                            .refreshToken(newRefreshToken)
-                            .build();
-                })
+                .flatMap(user ->
+                        userEmpresaRepository.findByUserIdAndEmpresaId(user.getId(), empresaId)
+                                .hasElement()
+                                .flatMap(exists -> {
+                                    if (!exists) {
+                                        return Mono.error(new UnauthorizedException("El usuario no tiene acceso a esta empresa"));
+                                    }
+                                    return Mono.just(user);
+                                })
+                                .map(u -> {
+                                    String newToken = jwtProvider.createTokenWithEmpresa(u, empresaId);
+                                    String newRefreshToken = jwtProvider.createRefreshToken(u);
+                                    return AuthResponse.builder()
+                                            .token(newToken)
+                                            .refreshToken(newRefreshToken)
+                                            .build();
+                                })
+                )
                 .subscribeOn(Schedulers.boundedElastic())
-                .doOnSubscribe(s -> log.info("Actualizando token"))
+                .doOnSubscribe(s -> log.info("Actualizando token con empresaId: {}", empresaId))
                 .doOnSuccess(r -> log.info("Token actualizado exitosamente"))
                 .doOnError(e -> log.error("Error al refrescar token", e));
     }

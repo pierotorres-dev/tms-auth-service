@@ -68,13 +68,13 @@ public class JwtProvider {
         }
     }
 
-    public String getUserNameFromToken(String token) {
+    public Integer getUserIdFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-        return claims.getSubject();
+        return claims.get("id", Integer.class);
     }
 
     public Integer getEmpresaIdFromToken(String token) {
