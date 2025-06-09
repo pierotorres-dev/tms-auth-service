@@ -1,6 +1,5 @@
 # Archivos de configuración local
 .env
-application.yml
 application-local.properties
 application-test.properties
 docker-compose.yml
