@@ -32,7 +32,10 @@ public class AuthenticationController {
         String token = authHeader.replace("Bearer ", "");
         log.info("Validando token");
         return authenticationService.validateToken(token)
-                .map(ResponseEntity::ok)
+                .map(isValid -> {
+                    log.info("Resultado de validación: {}", isValid);
+                    return ResponseEntity.ok(isValid);
+                })
                 .doOnError(e -> log.error("Error validando token: {}", e.getMessage()));
     }
 }

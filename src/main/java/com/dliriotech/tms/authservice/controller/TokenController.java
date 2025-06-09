@@ -30,10 +30,12 @@ public class TokenController {
     }
 
     @PostMapping("/refresh")
-    public Mono<ResponseEntity<AuthResponse>> refreshToken(@RequestHeader("Authorization") String authHeader) {
+    public Mono<ResponseEntity<AuthResponse>> refreshToken(
+            @RequestHeader("Authorization") String authHeader,
+            @RequestParam Integer empresaId) {
         String token = authHeader.replace("Bearer ", "");
-        log.info("Solicitud de renovación de token");
-        return tokenService.refreshToken(token)
+        log.info("Solicitud de renovación de token para empresa: {}", empresaId);
+        return tokenService.refreshToken(token, empresaId)
                 .map(ResponseEntity::ok)
                 .doOnError(e -> log.error("Error renovando token: {}", e.getMessage()));
     }

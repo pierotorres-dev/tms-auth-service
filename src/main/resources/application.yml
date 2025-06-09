@@ -1,0 +1,96 @@
+spring:
+  application:
+    name: tms-auth-service
+  r2dbc:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASS}
+    pool:
+      enabled: true
+      initial-size: 5
+      max-size: 10
+      max-idle-time: 5m
+      validation-query: SELECT 1
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+      password: ${REDIS_PASSWORD}
+      database: 0
+      timeout: 2000ms
+      client-type: lettuce
+  lifecycle:
+    timeout-per-shutdown-phase: 20s
+
+# Observabilidad - Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: when_authorized
+      livenessState:
+        enabled: true
+      readinessState:
+        enabled: true
+  zipkin:
+    tracing:
+      endpoint: http://localhost:9411/api/v2/spans
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+# Logging estructurado
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] [%X{traceId:-}, %X{spanId:-}] %-5level %logger{36} - %msg%n"
+  level:
+    root: INFO
+    com.dliriotech.tms.authservice: INFO
+    org.springframework.security: INFO
+    org.springframework.data.redis: DEBUG
+    org.springframework.r2dbc: DEBUG
+    io.r2dbc.pool: DEBUG
+
+# Resiliencia
+resilience4j:
+  ratelimiter:
+    instances:
+      authentication:
+        limitForPeriod: 10
+        limitRefreshPeriod: 1s
+        timeoutDuration: 2s
+        registerHealthIndicator: true
+        eventConsumerBufferSize: 100
+      tokengenerator:
+        limitForPeriod: 10
+        limitRefreshPeriod: 1s
+        timeoutDuration: 2s
+        registerHealthIndicator: true
+        eventConsumerBufferSize: 100
+
+springdoc:
+  swagger-ui:
+    url: /openapi.yaml
+    path: /swagger-ui.html
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 3600000 # 1 hora
+  refresh-expiration: 86400000 # 24 horas
+
+service:
+  api-gateway-key: ${API_GATEWAY_KEY}
+
+server:
+  port: 8081
+  shutdown: graceful

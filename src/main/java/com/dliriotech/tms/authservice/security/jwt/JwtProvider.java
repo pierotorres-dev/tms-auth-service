@@ -20,6 +20,9 @@ public class JwtProvider {
     @Value("${jwt.expiration}")
     private long expirationMs;
 
+    @Value("${jwt.refresh-expiration}")
+    private long refreshExpirationMs;
+
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secret.getBytes());
     }
@@ -39,6 +42,20 @@ public class JwtProvider {
                 .compact();
     }
 
+    public String createRefreshToken(AuthUser user) {
+        var now = new Date();
+        var expiryDate = new Date(now.getTime() + refreshExpirationMs);
+
+        return Jwts.builder()
+                .setSubject(user.getUserName())
+                .claim("id", user.getId())
+                .claim("role", user.getRole())
+                .setIssuedAt(now)
+                .setExpiration(expiryDate)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
     public boolean validate(String token) {
         try {
             Jwts.parserBuilder()
@@ -51,13 +68,13 @@ public class JwtProvider {
         }
     }
 
-    public String getUserNameFromToken(String token) {
+    public Integer getUserIdFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(getSigningKey())
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
-        return claims.getSubject();
+        return claims.get("id", Integer.class);
     }
 
     public Integer getEmpresaIdFromToken(String token) {
@@ -76,5 +93,22 @@ public class JwtProvider {
                 .parseClaimsJws(token)
                 .getBody();
         return claims.get("role", String.class);
+    }
+
+    public boolean hasEmpresaClaim(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.containsKey("id_empresa");
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    public boolean isRefreshToken(String token) {
+        return validate(token) && !hasEmpresaClaim(token);
     }
 }

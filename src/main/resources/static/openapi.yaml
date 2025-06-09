@@ -159,6 +159,12 @@ paths:
           schema:
             type: string
             example: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+        - name: empresaId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int32
       responses:
         '200':
           description: Token renovado correctamente
@@ -215,6 +221,9 @@ components:
         token:
           type: string
           description: Token JWT
+        refreshToken:
+          type: string
+          description: Token JWT para una sesión de 24 horas
         sessionToken:
           type: string
           description: Token de sesión para selección de empresa
@@ -232,6 +241,12 @@ components:
           type: integer
           format: int32
           description: ID de la empresa
+        nombre:
+          type: string
+          description: Nombre de la empresa
+        email:
+          type: string
+          description: Correo de referencia de la empresa
 
     RegisterRequest:
       type: object
@@ -289,6 +304,9 @@ components:
         token:
           type: string
           description: Token JWT
+        refreshToken:
+          type: string
+          description: Token JWT para una sesión de 24 horas
 
     ErrorResponse:
       type: object
