@@ -1,0 +1,64 @@
+name: Build and Deploy to Kubernetes
+
+on:
+  push:
+    branches: [ master ]
+
+env:
+  IMAGE_NAME: pierodevjar/tms-auth-service
+  DEPLOYMENT_NAME: auth-service
+  KUBE_NAMESPACE: tms-backend
+
+jobs:
+  build-and-push:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,prefix=,format=short
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy:
+    name: Deploy to Kubernetes Cluster
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Instala el CLI de kubectl
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      # 2. Configura el acceso a Kubernetes usando el token estático
+      - name: Setup Kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" > ~/.kube/config
+          kubectl config use-context tms-backend-stack-dliriotech-apis-production
+
+      # 3. Despliega la nueva imagen en Kubernetes
+      - name: Deploy to Kubernetes
+        run: |
+          kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} ${{ env.DEPLOYMENT_NAME }}=${{ env.IMAGE_NAME }}:$(echo ${{ github.sha }} | cut -c1-7) -n ${{ env.KUBE_NAMESPACE }}
+
+      - name: Verify deployment rollout
+        run: kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }} -n ${{ env.KUBE_NAMESPACE }} --timeout=120s
