@@ -6,11 +6,10 @@ spring:
     username: ${DB_USER}
     password: ${DB_PASS}
     pool:
-      enabled: true
-      initial-size: 5
-      max-size: 10
-      max-idle-time: 5m
+      max-idle-time: 10m
       validation-query: SELECT 1
+      validation-depth: REMOTE
+      max-life-time: 30m
   data:
     redis:
       host: ${REDIS_HOST}
