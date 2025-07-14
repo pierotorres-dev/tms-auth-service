@@ -87,9 +87,6 @@ jwt:
   expiration: 3600000 # 1 hora
   refresh-expiration: 86400000 # 24 horas
 
-service:
-  api-gateway-key: ${API_GATEWAY_KEY}
-
 server:
   port: 8081
   shutdown: graceful
